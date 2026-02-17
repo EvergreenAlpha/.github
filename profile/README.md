@@ -67,7 +67,7 @@ cd ../
 python -m http.server 8000
 
 # 3) 打开页面
-# http://localhost:8000/dashboard/
+# http://localhost:8002/dashboard/
 ```
 
 ## 设计原则
