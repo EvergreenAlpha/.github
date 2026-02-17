@@ -1,34 +1,78 @@
-# EvergreenAlpha 组织仓库总览
+# EvergreenAlpha
 
-这个组织当前围绕“市场级数据采集 + 统一看板 + 量化研究与部署”构建，仓库分工如下。
+<p align="center">
+  市场数据基础设施 · 宏观可视化看板 · 量化研究与部署
+</p>
 
-## 仓库列表
+<p align="center">
+  <img alt="Data API" src="https://img.shields.io/badge/Data_API-FastAPI%20%2B%20PostgreSQL-0b7285?style=flat-square">
+  <img alt="Dashboard" src="https://img.shields.io/badge/Dashboard-Realtime%20%2B%20Local-1d4ed8?style=flat-square">
+  <img alt="Model Serving" src="https://img.shields.io/badge/Model_Deploy-llama.cpp%20%2B%20Caddy-065f46?style=flat-square">
+  <img alt="Research" src="https://img.shields.io/badge/Research-qlib%20Integration-7c3aed?style=flat-square">
+</p>
 
-| 仓库 | 主要职责 | 关键内容 | 与其他仓库关系 |
-| --- | --- | --- | --- |
-| `.github` | 组织级说明与规范 | 组织 README、协作说明 | 为所有仓库提供统一入口 |
-| `data` | 数据后端与落库服务 | FastAPI + PostgreSQL + Scheduler；SOFR、Treasury、NYFed、CBOE PCR、CNN FGI、FedWatch、指数/商品/外汇行情 | 为 `dashboard` 提供 API；为研究/模型提供结构化数据 |
-| `dashboard` | 前端可视化看板 | 实时行情与宏观指标卡片、状态颜色体系、刷新与延时提示 | 读取 `data` 的 `/api/dashboard/all` 与健康接口 |
-| `tools` | 分析与生产力工具 | 本地 LLM 分析工具（schema-locked JSON）等 | 可消费 `data` 输出的数据，辅助研究流程 |
-| `model_deploy` | 模型服务部署 | `llama.cpp` + `Caddy` HTTPS 反向代理部署脚本 | 为 `tools` 或其他应用提供模型推理入口 |
-| `qlib` | 量化研究框架（上游镜像/集成） | 因子研究、回测、策略实验生态 | 可接入 `data` 产出的标准化数据做研究与回测 |
+<p align="center">
+  <img src="assets/dashboard-overview.png" alt="EvergreenAlpha Dashboard" width="1200">
+</p>
 
-## 当前整体链路
+<p align="center">
+  统一展示实时行情与宏观指标，支持数据来源追溯、落库存档与分析。
+</p>
 
-1. `data` 采集外部数据并落库，统一通过 API 暴露。  
-2. `dashboard` 读取 `data` 的聚合接口，展示实时与本地分析结果。  
-3. `tools` 与 `qlib` 基于同一批数据做分析、研究和策略验证。  
-4. `model_deploy` 提供本地模型服务能力，给 `tools` 或其他应用调用。  
+## 仓库地图
 
-## 目录说明（非独立仓库）
+| Repo | 角色定位 | 核心能力 |
+| --- | --- | --- |
+| [`.github`](https://github.com/EvergreenAlpha/.github) | 组织入口与协作规范 | 组织 README、协作说明、统一导航 |
+| [`data`](https://github.com/EvergreenAlpha/data) | 数据后端与落库服务 | FastAPI、Scheduler、PostgreSQL、统一 API |
+| [`dashboard`](https://github.com/EvergreenAlpha/dashboard) | 前端可视化 | 实时行情、宏观卡片、色彩语义、刷新控制 |
+| [`tools`](https://github.com/EvergreenAlpha/tools) | 分析与工具链 | 本地分析工具、结构化输出、自动化脚本 |
+| [`model_deploy`](https://github.com/EvergreenAlpha/model_deploy) | 模型推理部署 | `llama.cpp`、HTTPS 反向代理、服务化入口 |
+| [`qlib`](https://github.com/EvergreenAlpha/qlib) | 研究与回测生态 | 因子研究、策略实验、回测框架集成 |
 
-- `docs/`: 项目文档与说明材料  
-- `scripts/`: 通用脚本入口  
-- `model/`: 模型相关实验目录（按需扩展）  
+## 系统架构
 
-## 维护原则
+```mermaid
+flowchart LR
+    A[External Sources<br/>Fed / Treasury / CBOE / CME / CNN / Market Quotes]
+    B[data<br/>Ingest + Normalize + Store]
+    C[(PostgreSQL)]
+    D[data API<br/>Unified Endpoints]
+    E[dashboard<br/>Macro + Market View]
+    F[tools / qlib<br/>Research + Analysis]
+    G[model_deploy<br/>Model Serving]
 
-- 单一职责：每个仓库聚焦一类能力，避免重复实现。  
-- 数据优先：统一数据口径与落库，再做展示和研究。  
-- 可追溯：关键指标尽量保留来源链接、更新时间与计算口径。  
+    A --> B --> C --> D
+    D --> E
+    D --> F
+    G --> F
+```
+
+## 当前数据覆盖
+
+- 利率与曲线：SOFR、EFFR、Treasury 10Y、2s10s
+- 情绪与政策：CNN FGI、CME FedWatch
+- 市场行情：SPY / QQQ / DIA / XAUUSD / VIX / DXY / USDJPY
+- 期权统计：SPY / QQQ / DIA（OptionCharts 多到期结构，独立刷新）
+
+## 快速开始
+
+```bash
+# 1) 启动数据服务
+cd data
+docker compose up -d
+
+# 2) 启动看板
+cd ../
+python -m http.server 8000
+
+# 3) 打开页面
+# http://localhost:8000/dashboard/
+```
+
+## 设计原则
+
+- 单一职责：数据、展示、工具、部署解耦
+- 数据可追溯：指标尽量保留来源链接与时间戳
+- 先落库再分析：统一口径，减少前端与研究侧重复计算
 
